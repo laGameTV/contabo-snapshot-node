@@ -33,7 +33,7 @@ async function createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
 		.then((response) => response.data.data.map((instance) => instance))
         .catch((error) => console.error(error.response.data));
 
-    if(!instances) return exit(1);
+    if(!instances) return process.exit(1);
 
 	instances.forEach(async (instance) => {
 		const instanceId = instance.instanceId;
