@@ -3,24 +3,24 @@ const axios = require("axios");
 const uuid = require("uuid");
 require("dotenv").config();
 
-const { CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID } = process.env;
-const TRACE_ID = uuid.v4();
+const { CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID, CRON_SCHEDULE, ENABLE_CRON } = process.env;
+async function createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
+	const TRACE_ID = uuid.v4();
 
-const ACCESS_TOKEN = await axios
-	.post(
-		"https://auth.contabo.com/auth/realms/contabo/protocol/openid-connect/token",
-		new URLSearchParams({
-			client_id: CLIENT_ID,
-			client_secret: CLIENT_SECRET,
-			username: API_USER,
-			password: API_PASSWORD,
-			grant_type: "password",
-		})
-	)
-	.then((response) => response.data.access_token)
-    .catch((error) => console.error(error.response.data));
+	const ACCESS_TOKEN = await axios
+		.post(
+			"https://auth.contabo.com/auth/realms/contabo/protocol/openid-connect/token",
+			new URLSearchParams({
+				client_id: CLIENT_ID,
+				client_secret: CLIENT_SECRET,
+				username: API_USER,
+				password: API_PASSWORD,
+				grant_type: "password",
+			})
+		)
+		.then((response) => response.data.access_token)
+		.catch((error) => console.error(error.response.data));
 
-async function createSnapshots(ACCESS_TOKEN, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
 	const instances = await axios
 		.get("https://api.contabo.com/v1/compute/instances", {
 			headers: {
@@ -116,7 +116,7 @@ async function createSnapshots(ACCESS_TOKEN, UPTIME_KUMA_URL, UPTIME_KUMA_MONITO
 		console.log(`Snapshot created for instance ${instanceId}`, snapshot);
 	});
 }
-createSnapshots(ACCESS_TOKEN, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID);
+createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID);
 
 async function notifyUptimeKuma(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
     if(!UPTIME_KUMA_URL || !UPTIME_KUMA_MONITOR_ID) return;
