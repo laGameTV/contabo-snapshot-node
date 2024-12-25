@@ -1,10 +1,11 @@
 const moment = require("moment");
 const axios = require("axios");
 const uuid = require("uuid");
+const cron = require("node-cron");
 require("dotenv").config();
 
-const { CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID, CRON_SCHEDULE, ENABLE_CRON } = process.env;
-async function createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
+const { CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID, CRON_SCHEDULE, ENABLE_CRON, TZ } = process.env;
+async function createSnapshots(CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
 	const TRACE_ID = uuid.v4();
 
 	const ACCESS_TOKEN = await axios
@@ -31,9 +32,9 @@ async function createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
 			},
 		})
 		.then((response) => response.data.data.map((instance) => instance))
-        .catch((error) => console.error(error.response.data));
+		.catch((error) => console.error(error.response.data));
 
-    if(!instances) return process.exit(1);
+	if (!instances) return process.exit(1);
 
 	instances.forEach(async (instance) => {
 		const instanceId = instance.instanceId;
@@ -116,14 +117,19 @@ async function createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
 		console.log(`Snapshot created for instance ${instanceId}`, snapshot);
 	});
 }
-createSnapshots(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID);
+createSnapshots(CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID);
+let cronJob = cron.schedule(CRON_SCHEDULE || "0 0 0 * * *", () =>
+	createSnapshots(CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID)
+);
+if (ENABLE_CRON) cronJob.start();
 
 async function notifyUptimeKuma(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
-    if(!UPTIME_KUMA_URL || !UPTIME_KUMA_MONITOR_ID) return;
+	if (!UPTIME_KUMA_URL || !UPTIME_KUMA_MONITOR_ID) return;
 	console.log("Notifying Uptime Kuma");
-	axios.get(`${UPTIME_KUMA_URL}/api/push/${UPTIME_KUMA_MONITOR_ID}?status=up&msg=OK`)
-    // .then((response) => {
-	// 	console.log(response.data);
-	// });
-    .catch((error) => console.error(error.response.data));
+	axios
+		.get(`${UPTIME_KUMA_URL}/api/push/${UPTIME_KUMA_MONITOR_ID}?status=up&msg=OK`)
+		// .then((response) => {
+		// 	console.log(response.data);
+		// });
+		.catch((error) => console.error(error.response.data));
 }
