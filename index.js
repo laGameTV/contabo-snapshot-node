@@ -1,10 +1,9 @@
 const moment = require("moment");
 const axios = require("axios");
 const uuid = require("uuid");
-const cron = require("node-cron");
 require("dotenv").config();
 
-const { CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID, CRON_SCHEDULE, ENABLE_CRON } = process.env;
+const { CLIENT_ID, CLIENT_SECRET, API_USER, API_PASSWORD, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID } = process.env;
 const TRACE_ID = uuid.v4();
 
 const ACCESS_TOKEN = await axios
@@ -118,7 +117,6 @@ async function createSnapshots(ACCESS_TOKEN, UPTIME_KUMA_URL, UPTIME_KUMA_MONITO
 	});
 }
 createSnapshots(ACCESS_TOKEN, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID);
-if (ENABLE_CRON) cron.schedule(CRON_SCHEDULE || "0 0 0 * * *", () => createSnapshots(ACCESS_TOKEN, UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID));
 
 async function notifyUptimeKuma(UPTIME_KUMA_URL, UPTIME_KUMA_MONITOR_ID) {
     if(!UPTIME_KUMA_URL || !UPTIME_KUMA_MONITOR_ID) return;
